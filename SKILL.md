@@ -6,26 +6,101 @@ argument-hint: "Provide the YAML file path, a snippet, runtime message strings, 
 
 # API Documentation Review (OpenAPI 3.x)
 
-Draft skill — under construction. Update this file with the finalized rules, style guide references, and output format.
+Finalized skill for OpenAPI and API message reviews.
 
-## Intended scope (to be refined)
+This skill must produce outputs that follow the repository workflow used for REST API reviews.
+
+## Required output and file policy
+
+- Always generate a Markdown deliverable file in the active workspace.
+- Do not return chat-only review content when a file deliverable is expected.
+- Keep one consolidated review report unless the user explicitly asks for per-message output.
+
+## Required review section order
+
+Use this exact order:
+
+1. Source / Total / Reviewer
+2. Review Scope
+3. Style Guide References
+4. Question Tags
+5. Summary
+6. Findings
+7. Cross-cutting Questions
+
+## Required finding format
+
+Use heading format `### Finding #n` and keep numbering sequential.
+Place exactly one `---` divider line between findings.
+
+Every finding must include all fields below:
+
+- Location
+- Category
+- Severity
+- Actual
+- Recommended
+- Editorial note
+- Questions to the SME
+- Why
+
+If no SME question exists, set:
+
+- Questions to the SME: None.
+
+Use only these severity values:
+
+- Critical
+- Major
+- Minor
+
+## Critical description-field rules
+
+- Never summarize description-field content in findings.
+- For description reviews, Actual must quote the full source block verbatim.
+- For description reviews, Recommended must be a full replacement paragraph or block.
+- Do not use bullet-only replacement text for description findings unless explicitly requested.
+
+## Mandatory scope separation
+
+Do not mix artifact types within one finding narrative.
+Keep findings segregated by scope:
+
+- OpenAPI YAML or spec text
+- UI/i18n message maps
+- Java/runtime constants
+
+If input includes mixed artifacts, split findings by scope and label scope clearly.
+
+## Mandatory messaging guidance checks
+
+- For 4xx, 5xx, and 207 partial/failure response descriptions, include explicit caller next-step guidance.
+- Keep guidance concise and actionable.
+- Use question tags exactly as [Editorial] and [Technical].
+- Keep terminology casing consistent, including JWT token.
+
+## Core review scope
 
 - Editorial review of OpenAPI 3.x YAML prose (summary, description, parameters, responses, schema descriptions)
 - Review of accompanying runtime / UI error messages for consistency with the spec
 - Structural / spec sanity checks (empty schemas, missing required fields, broken `$ref`s, unused components)
 - Cross-file consistency (terminology, JWT phrasing, error templates, operationId conventions)
 
-## Intended output format (to be refined)
+## Standard finding block
 
-Default: Actual / Revised blocks, grouped by section, with severity and one-line justification.
+Default: detailed finding blocks grouped under Findings.
 
 ```
-[#N] Location: <YAML path or message key>
+### Finding #N
+Location: <YAML path or message key>
 Category: <Structure | Clarity | Grammar | Style | Consistency | Example>
 Severity: <Critical | Major | Minor>
 
 Actual:  <verbatim original>
-Revised: <suggested replacement>
+Recommended: <suggested replacement>
+
+Editorial note: <editorial recommendation context>
+Questions to the SME: <question or None.>
 
 Why: <one-line justification>
 ```
@@ -56,12 +131,12 @@ Default clarification set (adapt as needed):
 3. Should action names mirror exact API values (for example `logout` vs `log out`)?
 4. What is the approved numeric range policy for port validation?
 
-## Style references (to be refined)
+## Style references
 
 - Microsoft Writing Style Guide — voice, grammar, plain language
 - Google Developer Documentation Style Guide — technical conventions
 - OpenAPI 3.x Specification — structural rules
-- Project conventions — JWT token phrasing, OpenEdge terminology, error message template
+- Project conventions - JWT token phrasing, OpenEdge terminology, error message template
 
 ## Notes
 
@@ -73,15 +148,23 @@ Default clarification set (adapt as needed):
 Before returning final output, enforce a formatting and quality pass:
 
 - Ensure every finding block includes all required fields: Location, Category, Severity,
-  Actual, Revised, Why.
+   Actual, Recommended, Editorial note, Questions to the SME, Why.
 - Ensure severity values are only: Critical, Major, Minor.
 - Ensure terminology and placeholders are consistent throughout the output.
 - Ensure no duplicated finding IDs and no missing numbering.
 - Ensure grammar, punctuation, and spacing are clean and publication-ready.
-- Ensure revised text is actionable and preserves message intent.
+- Ensure recommended text is actionable and preserves message intent.
+- For every edited item, include an explicit rationale that states why text was removed,
+  replaced, or reordered (for example: Clarity, Consistency, Brevity, Grammar,
+  Technical fidelity).
+- If the recommended text is unchanged, state why no change was needed.
+- Ensure description findings contain verbatim Actual and full-block Recommended content.
+- Ensure exactly one `---` divider appears between adjacent findings.
+- Ensure declared total findings count matches actual findings.
+- Ensure no cross-scope mixing occurs within a finding.
 
-If the user requests file output, generate cleanly formatted `.md` or `.docx` content that
-matches the same structure and quality bar.
+If the user requests file output, generate cleanly formatted `.md` content only.
+Do not generate `.docx` output unless the user explicitly overrides this rule.
 
 ## Review framing
 
@@ -144,13 +227,17 @@ Use the standard finding block with `Category: Example` or `Category: Clarity`, 
 `Why:` state the developer task that is currently blocked. For example:
 
 ```
-[#N] Location: paths./reports.post
+### Finding #N
+Location: paths./reports.post
 Category: Example
 Severity: Major
 
 Actual:  (single example with body { "name": "string", "type": "string" })
-Revised: Add two examples: "Create a scheduled report" and "Create an ad-hoc report",
+Recommended: Add two examples: "Create a scheduled report" and "Create an ad-hoc report",
          each with realistic field values and the matching 201 response body.
+
+Editorial note: Add realistic examples to reduce trial-and-error integration.
+Questions to the SME: None.
 
 Why: Callers can't tell which fields are required for each report type without trial and
      error; this is the resource that drove the recent support-call spike.
@@ -158,6 +245,20 @@ Why: Callers can't tell which fields are required for each report type without t
 
 Prefer recommending **one more well-placed example** over recommending more prose. A
 concrete example often resolves confusion that additional explanation cannot.
+
+### Error message actionability
+
+For error response descriptions, always check whether a developer reading the message can
+determine what action to take. If the required action is unclear, include an [Editorial]
+question to SME asking whether the message should include:
+- Recovery guidance (e.g., "Verify your permissions" or "Check field format")
+- Reference to response fields that provide details (e.g., "See notFoundRoleURNs")
+- Link to troubleshooting or escalation path
+
+Common cases requiring SME questions:
+- `403` / `401` errors that don't explain whether to retry, re-authenticate, or escalate
+- `404` / `400` errors that don't indicate which input caused the failure or how to fix it
+- Generic messages like "Request failed" that don't help developers differentiate causes
 
 ## UI ↔ API message overlap
 
