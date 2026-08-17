@@ -60,6 +60,10 @@ Use only these severity values:
 - For description reviews, Actual must quote the full source block verbatim.
 - For description reviews, Recommended must be a full replacement paragraph or block.
 - Do not use bullet-only replacement text for description findings unless explicitly requested.
+- For OpenAPI endpoint description recommendations, begin with this style when applicable:
+   `As an OpenEdge Command Center administrator, you can ...`
+- Keep endpoint descriptions concise and task-focused, and avoid embedding response-code
+   behavior in description blocks unless explicitly required.
 
 ## Mandatory scope separation
 
@@ -159,6 +163,8 @@ Before returning final output, enforce a formatting and quality pass:
   Technical fidelity).
 - If the recommended text is unchanged, state why no change was needed.
 - Ensure description findings contain verbatim Actual and full-block Recommended content.
+- Ensure endpoint description recommendations follow the administrator-focused opener style
+   when applicable: `As an OpenEdge Command Center administrator, you can ...`.
 - Ensure exactly one `---` divider appears between adjacent findings.
 - Ensure declared total findings count matches actual findings.
 - Ensure no cross-scope mixing occurs within a finding.
