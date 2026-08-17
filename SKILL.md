@@ -86,6 +86,13 @@ If input includes mixed artifacts, split findings by scope and label scope clear
    - Success responses should start with `Request successful.`
    - Accepted async responses should start with `Request accepted.`
    - Failure responses should start with `Request failed.`
+- Match the recommended response-description prefix to the documented HTTP status code:
+   - Use `Request successful.` for documented `200` responses.
+   - Use `Request accepted.` for documented `202` responses.
+   - Do not change a `200` recommendation to `Request accepted.` only because the operation is asynchronous.
+- If you believe an asynchronous `200` should instead be `202`, keep the wording aligned to the
+  currently documented status code in `Recommended`, and raise the status-code change as a separate
+  `[Technical]` SME question or finding.
 
 ## Mandatory exhaustive coverage workflow
 
@@ -94,8 +101,16 @@ Do not skip any reviewable text block in the provided input.
 For every review, perform these steps before finalizing findings:
 
 1. Build a coverage inventory by scope:
-   - Scope A (OpenAPI/spec): every operation `summary`, `description`, parameter description,
-     requestBody description, and each response description (2xx/4xx/5xx/207).
+    - Scope A (OpenAPI/spec): every operation `summary` and `description`.
+    - Scope A (OpenAPI/spec): every parameter description for every parameter location,
+       including path, query, header, and cookie parameters.
+    - Scope A (OpenAPI/spec): every requestBody description and every nested schema description
+       inside the request body, including object properties such as file-part descriptions.
+    - Scope A (OpenAPI/spec): every response description (2xx/4xx/5xx/207) and any nested
+       schema descriptions provided in response bodies.
+    - Scope A (OpenAPI/spec): short labels/descriptions are not exempt. Brief strings such as
+       `ABL application name`, `Web application name`, or file-part descriptions must still be
+       reviewed and marked either `Finding created` or `Checked - no change needed`.
    - Scope B (message maps): every message key/value pair.
    - Scope C (Java/runtime constants): every user-visible message constant provided.
 2. Mark each inventory item as one of:
@@ -104,6 +119,7 @@ For every review, perform these steps before finalizing findings:
 3. Ensure inventory coverage is complete before final output:
    - No unreviewed item is allowed.
    - `Checked - no change needed` items must still be explicitly reviewed.
+   - Do not skip an item because it appears obvious, short, repetitive, or already acceptable.
 4. You may combine multiple locations in one finding only when:
    - The source wording is materially identical, and
    - The recommendation is identical for all listed locations.
