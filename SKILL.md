@@ -82,6 +82,10 @@ If input includes mixed artifacts, split findings by scope and label scope clear
 - Keep guidance concise and actionable.
 - Use question tags exactly as [Editorial] and [Technical].
 - Keep terminology casing consistent, including JWT token.
+- Preserve mandatory response-description prefixes when recommending wording:
+   - Success responses should start with `Request successful.`
+   - Accepted async responses should start with `Request accepted.`
+   - Failure responses should start with `Request failed.`
 
 ## Core review scope
 
