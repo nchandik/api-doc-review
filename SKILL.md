@@ -87,6 +87,29 @@ If input includes mixed artifacts, split findings by scope and label scope clear
    - Accepted async responses should start with `Request accepted.`
    - Failure responses should start with `Request failed.`
 
+## Mandatory exhaustive coverage workflow
+
+Do not skip any reviewable text block in the provided input.
+
+For every review, perform these steps before finalizing findings:
+
+1. Build a coverage inventory by scope:
+   - Scope A (OpenAPI/spec): every operation `summary`, `description`, parameter description,
+     requestBody description, and each response description (2xx/4xx/5xx/207).
+   - Scope B (message maps): every message key/value pair.
+   - Scope C (Java/runtime constants): every user-visible message constant provided.
+2. Mark each inventory item as one of:
+   - `Finding created`
+   - `Checked - no change needed`
+3. Ensure inventory coverage is complete before final output:
+   - No unreviewed item is allowed.
+   - `Checked - no change needed` items must still be explicitly reviewed.
+4. You may combine multiple locations in one finding only when:
+   - The source wording is materially identical, and
+   - The recommendation is identical for all listed locations.
+5. If content is ambiguous (for example whether a constant is user-visible), add an SME
+   question and still provide a conditional recommendation.
+
 ## Core review scope
 
 - Editorial review of OpenAPI 3.x YAML prose (summary, description, parameters, responses, schema descriptions)
@@ -172,6 +195,8 @@ Before returning final output, enforce a formatting and quality pass:
 - Ensure exactly one `---` divider appears between adjacent findings.
 - Ensure declared total findings count matches actual findings.
 - Ensure no cross-scope mixing occurs within a finding.
+- Ensure exhaustive coverage was completed for all provided descriptions/messages/constants,
+  and no inventory item was skipped.
 
 If the user requests file output, generate cleanly formatted `.md` content only.
 Do not generate `.docx` output unless the user explicitly overrides this rule.
