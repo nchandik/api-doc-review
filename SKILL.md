@@ -15,6 +15,7 @@ This skill must produce outputs that follow the repository workflow used for RES
 - Always generate a Markdown deliverable file in the active workspace.
 - Do not return chat-only review content when a file deliverable is expected.
 - Keep one consolidated review report unless the user explicitly asks for per-message output.
+- When the review is complete, open the generated Markdown deliverable in the editor before reporting completion.
 
 ## Required review section order
 
@@ -85,10 +86,12 @@ If input includes mixed artifacts, split findings by scope and label scope clear
 - Preserve mandatory response-description prefixes when recommending wording:
    - Success responses should start with `Request successful.`
    - Accepted async responses should start with `Request accepted.`
-   - Failure responses should start with `Request failed.`
+   - `207 Multi-Status` responses should start with `Request partially successful.`
+   - Other failure responses should start with `Request failed.`
 - Match the recommended response-description prefix to the documented HTTP status code:
    - Use `Request successful.` for documented `200` responses.
    - Use `Request accepted.` for documented `202` responses.
+   - Use `Request partially successful.` for documented `207` responses.
    - Do not change a `200` recommendation to `Request accepted.` only because the operation is asynchronous.
 - If you believe an asynchronous `200` should instead be `202`, keep the wording aligned to the
   currently documented status code in `Recommended`, and raise the status-code change as a separate
