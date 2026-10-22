@@ -11,15 +11,36 @@ A Copilot skill for reviewing OpenAPI 3.x YAML specs and the runtime/UI error me
 
 ## Output format
 
-Findings are returned as numbered blocks:
+Reviews are delivered as one consolidated Markdown report with these sections:
+
+1. Source / Total / Reviewer
+2. Review Scope
+3. Message Type Summary
+4. Style Guide References
+5. Question Tags
+6. Summary
+7. Findings
+8. Cross-cutting Questions
+
+Findings use sequential `### Finding #n` headings, with exactly one `---` divider between
+findings. Each includes the message type, severity, verbatim original, revised wording,
+editorial note, SME questions, and rationale. The labels
+`**Message type:**`, `**Actual:**`, and `**Revised:**` use bold Markdown formatting.
+
+Example finding:
 
 ```
-[#N] Location: <YAML path or message key>
+### Finding #N
+Location: <YAML path or message key>
+**Message type:** <type from the classification table>
 Category: <Structure | Clarity | Grammar | Style | Consistency | Example>
 Severity: <Critical | Major | Minor>
 
-Actual:  <verbatim original>
-Revised: <suggested replacement>
+**Actual:** <verbatim original>
+**Revised:** <suggested replacement>
+
+Editorial note: <editorial recommendation context>
+Questions to the SME: <question or None.>
 
 Why: <one-line justification>
 ```
@@ -58,7 +79,8 @@ Example prompts:
 
 ## Status
 
-Draft — under construction. Rules, severity thresholds, and the output format are not yet finalized.
+Finalized. The skill defines review coverage, message classification, finding format,
+severity levels, and output requirements.
 
 ## License
 

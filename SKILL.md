@@ -23,11 +23,16 @@ Use this exact order:
 
 1. Source / Total / Reviewer
 2. Review Scope
-3. Style Guide References
-4. Question Tags
-5. Summary
-6. Findings
-7. Cross-cutting Questions
+3. Message Type Summary (required in every review)
+4. Style Guide References
+5. Question Tags
+6. Summary
+7. Findings
+8. Cross-cutting Questions
+
+The Message Type Summary is a table with columns `Message key or text`, `Message type`, and `Evidence`.
+Every reviewed item in every scope must appear, even if its type is `Unconfirmed`.
+Use the evidence column to cite what established the type (for example, a call site, a notification state label, or `wording only`).
 
 ## Required finding format
 
@@ -37,13 +42,22 @@ Place exactly one `---` divider line between findings.
 Every finding must include all fields below:
 
 - Location
+- Message type (required for every finding in every scope; choose from the Message type classification table, such as `UI notification - success`, `UI validation / business-rule error`, `API error response`, `API error code`, `API parameter description`, or `Log entry`; use `Unconfirmed` if not known)
 - Category
 - Severity
 - Actual
-- Recommended
+- Revised
 - Editorial note
 - Questions to the SME
 - Why
+
+Format these labels with native bold Markdown so they stand out from body text:
+
+- `**Message type:**` (all findings)
+- `**Actual:**`
+- `**Revised:**`
+
+Do not add qualifiers such as `current`, `proposed`, `Recommended`, or `Revise`.
 
 If no SME question exists, set:
 
@@ -59,12 +73,15 @@ Use only these severity values:
 
 - Never summarize description-field content in findings.
 - For description reviews, Actual must quote the full source block verbatim.
-- For description reviews, Recommended must be a full replacement paragraph or block.
+- For description reviews, Revised must be a full replacement paragraph or block.
 - Do not use bullet-only replacement text for description findings unless explicitly requested.
 - For OpenAPI endpoint description recommendations, begin with this style when applicable:
    `As an OpenEdge Command Center administrator, you can ...`
 - Keep endpoint descriptions concise and task-focused, and avoid embedding response-code
    behavior in description blocks unless explicitly required.
+- Write prerequisites (for example, "The database and its Agent must be running.") as a
+   caller-directed condition: `Before you begin, ensure that <condition>.` Use present tense
+   after "ensure that" (for example, "are running"); never combine "ensure" with "must".
 
 ## Mandatory scope separation
 
@@ -76,6 +93,39 @@ Keep findings segregated by scope:
 - Java/runtime constants
 
 If input includes mixed artifacts, split findings by scope and label scope clearly.
+
+## Message type classification (mandatory for every reviewed item)
+
+Classify every reviewed item (Scope A, B, and C) with exactly one type from the table below, then
+apply that type's quality criteria when writing the Revised text. Use `Unconfirmed` when the
+source does not establish the type, and ask for a call site or usage example.
+
+In Scope A, the Message Type Summary lists spec elements (operation summary, parameter
+description, and so on) by the same table.
+
+| Message type | Identification cues | Quality criteria for Revised text |
+|---|---|---|
+| UI notification - success / in progress / failure | Toast or banner text; state labels such as SUCCESS, IN-PROGRESS, FAILED; `getLabel` or i18n keys | Short, plain English; complete localized sentences, not concatenated fragments; no HTTP or internal jargon; failure states name the next step |
+| UI validation / business-rule error | Prerequisite or input-rule wording (`Provide ...`, `cannot be ... while ...`) | State the rule and the fix in one or two sentences; name the fields or features involved |
+| API error response (4xx/5xx message) | Returned in an error body; `errMessage`; `Request failed.` prefix | Required prefix; cause plus caller next step; no internal stack or class names; stable wording for client handling |
+| API error code | Numeric or symbolic code (for example `E1234`, `INVALID_STATE`) | Code stays unchanged; review the associated description; each code has a cause and a remediation; no duplicate meanings |
+| API operation summary | `summary` field | Imperative verb phrase; 3-8 words; `Retrieve` for reads; abbreviations expanded; no trailing period |
+| API operation description | `description` field on an operation | Administrator-focused opener; task-focused; prerequisites as `Before you begin, ensure that ...`; no response-code behavior |
+| API parameter description | Path, query, header, or cookie `description` | `Specifies ...` pattern; states what to supply, valid values, default, and units; no restating of the type |
+| API request/response body property description | Schema property `description` | Meaning, valid values, and conditional requirements; enum values explained |
+| API success/response description | `responses.<code>.description` | Required prefix for the status code; one sentence on the outcome |
+| Log entry | Logger calls, diagnostic text, no user instruction | Diagnostic context (what, which resource, why); consistent placeholders; no secrets or personal data; no user-facing recovery guidance unless also shown to users |
+| Dialog / confirmation prompt | Confirm or cancel text; destructive-action wording | Clear consequence, explicit action labels, no ambiguity about what will happen |
+| Help or tooltip text | Field hint; short helper copy | One short sentence; explains purpose, not UI mechanics |
+| Unconfirmed | Wording alone is ambiguous | Provide a conditional recommendation and ask the SME where the text appears |
+
+Cross-type rules:
+
+- A string can serve more than one type (for example, an API error message also shown in the UI);
+  list every type and apply the stricter criteria.
+- Do not apply user-facing tone or recovery guidance to `Log entry` unless the same text is shown to a user.
+- Do not change an `API error code` value; revise only its description.
+- State the evidence for each classification (call site, state label, field name, or `wording only`).
 
 ## Mandatory messaging guidance checks
 
@@ -94,7 +144,7 @@ If input includes mixed artifacts, split findings by scope and label scope clear
    - Use `Request partially successful.` for documented `207` responses.
    - Do not change a `200` recommendation to `Request accepted.` only because the operation is asynchronous.
 - If you believe an asynchronous `200` should instead be `202`, keep the wording aligned to the
-  currently documented status code in `Recommended`, and raise the status-code change as a separate
+   currently documented status code in `Revised`, and raise the status-code change as a separate
   `[Technical]` SME question or finding.
 
 ## Mandatory exhaustive coverage workflow
@@ -114,7 +164,14 @@ For every review, perform these steps before finalizing findings:
     - Scope A (OpenAPI/spec): short labels/descriptions are not exempt. Brief strings such as
        `ABL application name`, `Web application name`, or file-part descriptions must still be
        reviewed and marked either `Finding created` or `Checked - no change needed`.
-   - Scope B (message maps): every message key/value pair.
+    - Scope B (message maps): every message key/value pair.
+       - Include a `Message type` column in the coverage inventory and classify every item, such as `UI notification - success`, `validation/business-rule error`, `API error response`, `log entry`, or `unconfirmed`.
+       - Identify the likely message surface and type from call sites or supplied context, such as a UI notification/toast, validation or business-rule error, progress status, dialog, API response, or log entry. A key name or message wording alone does not prove where a string appears.
+         - If the runtime destination is unknown, label it as unconfirmed, state any likely interpretation as an assumption, and ask for a call site or usage example before making surface-specific recommendations.
+       - For notifications, identify the outcome state when evident (for example, success, in progress, or failure) in both the inventory and the finding's `Message type` field.
+       - Distinguish rendered user-facing text from localization keys, grouping headings, and internal identifiers. Do not treat an internal identifier as displayed copy unless evidence supports that; ask an SME when its role is ambiguous.
+       - Review the fully rendered message, including interpolated values and text assembled from localized fragments, for grammar, word order, capitalization, placeholder behavior, and translation suitability.
+         - For log-only messages, prioritize diagnostic context, useful structured fields, and avoiding sensitive data; do not apply user-facing tone or recovery-guidance expectations unless the same message is also shown to a user or API caller.
    - Scope C (Java/runtime constants): every user-visible message constant provided.
 2. Mark each inventory item as one of:
    - `Finding created`
@@ -132,6 +189,7 @@ For every review, perform these steps before finalizing findings:
 ## Core review scope
 
 - Editorial review of OpenAPI 3.x YAML prose (summary, description, parameters, responses, schema descriptions)
+- For read operations, use `Retrieve` rather than `Get` as the summary verb unless an established product convention requires `Get`.
 - Review of accompanying runtime / UI error messages for consistency with the spec
 - Structural / spec sanity checks (empty schemas, missing required fields, broken `$ref`s, unused components)
 - Cross-file consistency (terminology, JWT phrasing, error templates, operationId conventions)
@@ -143,11 +201,12 @@ Default: detailed finding blocks grouped under Findings.
 ```
 ### Finding #N
 Location: <YAML path or message key>
+**Message type:** <type from the classification table; use Unconfirmed if not known>
 Category: <Structure | Clarity | Grammar | Style | Consistency | Example>
 Severity: <Critical | Major | Minor>
 
-Actual:  <verbatim original>
-Recommended: <suggested replacement>
+**Actual:** <verbatim original>
+**Revised:** <suggested replacement>
 
 Editorial note: <editorial recommendation context>
 Questions to the SME: <question or None.>
@@ -197,19 +256,21 @@ Default clarification set (adapt as needed):
 
 Before returning final output, enforce a formatting and quality pass:
 
-- Ensure every finding block includes all required fields: Location, Category, Severity,
-   Actual, Recommended, Editorial note, Questions to the SME, Why.
+- Ensure every finding block includes all required fields: Location, Message type, Category,
+   Severity, Actual, Revised, Editorial note, Questions to the SME, Why.
+- Ensure the labels `**Message type:**`, `**Actual:**`, and `**Revised:**` use this exact
+   bold Markdown formatting, without parenthetical qualifiers.
 - Ensure severity values are only: Critical, Major, Minor.
 - Ensure terminology and placeholders are consistent throughout the output.
 - Ensure no duplicated finding IDs and no missing numbering.
 - Ensure grammar, punctuation, and spacing are clean and publication-ready.
-- Ensure recommended text is actionable and preserves message intent.
+- Ensure revised text is actionable and preserves message intent.
 - For every edited item, include an explicit rationale that states why text was removed,
   replaced, or reordered (for example: Clarity, Consistency, Brevity, Grammar,
   Technical fidelity).
-- If the recommended text is unchanged, state why no change was needed.
-- Ensure description findings contain verbatim Actual and full-block Recommended content.
-- Ensure endpoint description recommendations follow the administrator-focused opener style
+- If the revised text is unchanged, state why no change was needed.
+- Ensure description findings contain verbatim Actual and full-block Revised content.
+- Ensure endpoint description revisions follow the administrator-focused opener style
    when applicable: `As an OpenEdge Command Center administrator, you can ...`.
 - Ensure exactly one `---` divider appears between adjacent findings.
 - Ensure declared total findings count matches actual findings.
@@ -286,8 +347,8 @@ Location: paths./reports.post
 Category: Example
 Severity: Major
 
-Actual:  (single example with body { "name": "string", "type": "string" })
-Recommended: Add two examples: "Create a scheduled report" and "Create an ad-hoc report",
+**Actual:** (single example with body { "name": "string", "type": "string" })
+**Revised:** Add two examples: "Create a scheduled report" and "Create an ad-hoc report",
          each with realistic field values and the matching 201 response body.
 
 Editorial note: Add realistic examples to reduce trial-and-error integration.
